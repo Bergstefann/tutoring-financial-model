@@ -1,0 +1,30 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Pseudonym / identity mapping — must never leave this machine
+data/pseudonym_map.*
+*pseudonym*map*
+
+# Raw and intermediate data extracts (may contain real names/addresses)
+data/
+
+# Excel lock files
+~$*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
