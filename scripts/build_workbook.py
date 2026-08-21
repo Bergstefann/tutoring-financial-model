@@ -530,10 +530,10 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
     ws.merge_cells(f"A{r}:C{r}")
     ws.row_dimensions[r].height = 30
     r += 1
-    sc(ws, f"A{r}", "Annualisation factor (working weeks/yr ÷ weeks/term)", border=True, wrap=True)
+    sc(ws, f"A{r}", "Annualisation factor", border=True)
     sc(ws, f"B{r}", f"={A('working_weeks_per_year')}/{A('weeks_per_term')}", font=GREEN,
        number_format=NUM2, border=True)
-    sc(ws, f"C{r}", "", border=True)
+    sc(ws, f"C{r}", "Working weeks/yr ÷ weeks/term.", font=NOTE_FONT, wrap=True, border=True)
     factor_row = r
     r += 1
     ann_start = r
