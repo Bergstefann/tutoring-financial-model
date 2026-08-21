@@ -27,16 +27,19 @@ WIND_UP_DATE = "2026-09-18"
 # row (HEADER_FONT/HEADER_FILL) keeps colour. BLUE/GREEN and the various
 # fills are retired to plain black / None rather than renamed, since that
 # keeps every existing font=BLUE / fill=YELLOW_FILL call site correct as-is.
-BLUE = Font(color="000000")
-BOLD_BLUE = Font(color="000000", bold=True)
-BLACK = Font(color="000000")
-GREEN = Font(color="000000")
-BOLD = Font(bold=True)
-BOLD_GREEN = Font(color="000000", bold=True)
+# BODY_SIZE is the one font size used everywhere except TITLE_FONT (sheet
+# titles are deliberately larger); every other font below sets it explicitly
+# so no cell falls back to an implicit, potentially-inconsistent default.
+BODY_SIZE = 11
+BLUE = Font(color="000000", size=BODY_SIZE)
+BOLD_BLUE = Font(color="000000", bold=True, size=BODY_SIZE)
+BLACK = Font(color="000000", size=BODY_SIZE)
+GREEN = Font(color="000000", size=BODY_SIZE)
+BOLD = Font(bold=True, size=BODY_SIZE)
 TITLE_FONT = Font(bold=True, size=14)
-SECTION_FONT = Font(bold=True, size=11, color="000000")
-NOTE_FONT = Font(italic=True, size=9, color="000000")
-HEADER_FONT = Font(bold=True, color="FFFFFF")
+SECTION_FONT = Font(bold=True, size=BODY_SIZE, color="000000")
+NOTE_FONT = Font(italic=True, size=BODY_SIZE, color="000000")
+HEADER_FONT = Font(bold=True, color="FFFFFF", size=BODY_SIZE)
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
 YELLOW_FILL = None
 GREY_FILL = None
@@ -103,11 +106,11 @@ def build_readme(wb):
     ws.column_dimensions["B"].width = 90
 
     sc(ws, "A1", "Tutoring Business Financial Model", font=TITLE_FONT)
-    sc(ws, "A3", "As at:", bold=True)
+    sc(ws, "A3", "As at:")
     sc(ws, "B3", AS_AT_DATE)
-    sc(ws, "A4", "Business wound up:", bold=True)
+    sc(ws, "A4", "Business wound up:")
     sc(ws, "B4", f"{WIND_UP_DATE} (end of school term)")
-    sc(ws, "A5", "Student identities:", bold=True)
+    sc(ws, "A5", "Student identities:")
     sc(ws, "B5",
        "Pseudonymised. Every student appears as \"Student NN\"; no real name, "
        "parent name, email address, or address appears anywhere in this "
@@ -157,7 +160,7 @@ ASSUMPTIONS_SPEC = [
      "From data: flat $40 per 30-minute lesson across all 37 students "
      "(Portfolio Lesson Schedule extract, Term 1 2026).", False),
     ("row", "duration_min", "Standard lesson duration", 30, "min", False, INT_FMT,
-     "Confirmed by business owner, 2026-08-20 — not present in source data.", False),
+     "Confirmed by business owner, 2026-08-20. Not present in source data.", False),
     ("row", "hourly_rate", "Implied hourly rate", "={rate_per_lesson}/({duration_min}/60)",
      "$/hr", True, CURRENCY,
      "Derived: rate per lesson ÷ (duration ÷ 60).", False),
@@ -175,7 +178,7 @@ ASSUMPTIONS_SPEC = [
     ("row", "terms_per_year", "Terms per year", 4, "terms", False, INT_FMT,
      "Owner estimate.", False),
     ("row", "weeks_per_term", "Weeks per term", 9, "weeks", False, INT_FMT,
-     "Owner estimate — matches the 9 weekly blocks in the extracted schedule.", False),
+     "Owner estimate. Matches the 9 weekly blocks in the extracted schedule.", False),
     ("row", "working_weeks_per_year", "Working weeks per year",
      "={terms_per_year}*{weeks_per_term}", "weeks", True, INT_FMT,
      "Derived: terms per year × weeks per term.", False),
@@ -183,7 +186,7 @@ ASSUMPTIONS_SPEC = [
      "From data: 5 populated weekdays per week in the extract.", False),
     ("row", "max_lessons_per_week", "Max lessons per week (scheduling ceiling)", 37,
      "lessons", False, INT_FMT,
-     "Owner confirmed, 2026-08-20 — equals current scheduled lesson volume. "
+     "Owner confirmed, 2026-08-20. Equals current scheduled lesson volume. "
      "The business is already scheduled at its capacity ceiling; the gap to "
      "lessons actually delivered is show-up rate, not spare capacity.", True),
     ("row", "max_teachable_hours", "Max teachable hours per week",
@@ -194,7 +197,7 @@ ASSUMPTIONS_SPEC = [
 
     ("section", "Travel & Vehicle"),
     ("row", "travel_time_per_day", "Travel time per day", 1.5, "hrs", False, NUM1,
-     "Owner estimate — flat figure. No per-suburb location data exists "
+     "Owner estimate, flat figure. No per-suburb location data exists "
      "in the source, so travel can't be modelled by distance.", False),
     ("row", "travel_time_per_week", "Travel time per week",
      "={travel_time_per_day}*{working_days_per_week}", "hrs", True, NUM1,
@@ -224,12 +227,12 @@ ASSUMPTIONS_SPEC = [
      "fewer students. Drives the \"Selected scenario\" callout on the "
      "Scenarios sheet.", True),
     ("row", "scenario2_volume_mult", "Scenario 2: lesson volume multiplier", 1.30, "×",
-     False, NUM2, "Illustrative — adjust as needed. 30% more lesson volume "
+     False, NUM2, "Illustrative, adjust as needed. 30% more lesson volume "
      "at the current rate.", False),
     ("row", "scenario3_rate_mult", "Scenario 3: rate multiplier", 1.25, "×", False, NUM2,
-     "Illustrative — adjust as needed. A 25% rate rise.", False),
+     "Illustrative, adjust as needed. A 25% rate rise.", False),
     ("row", "scenario3_volume_mult", "Scenario 3: lesson volume multiplier", 0.85, "×",
-     False, NUM2, "Illustrative — adjust as needed. 15% fewer lessons at "
+     False, NUM2, "Illustrative, adjust as needed. 15% fewer lessons at "
      "the higher rate.", False),
 ]
 
@@ -274,7 +277,7 @@ def build_assumptions(wb):
         else:
             fill = PLACEHOLDER_FILL if flag == "placeholder" else (
                 YELLOW_FILL if flag else None)
-            sc(ws, value_addr, value, font=BOLD_BLUE, number_format=number_format,
+            sc(ws, value_addr, value, font=BLACK, number_format=number_format,
                fill=fill, border=True)
         sc(ws, f"C{row}", units, font=NOTE_FONT, border=True)
         sc(ws, f"D{row}", source, font=NOTE_FONT, wrap=True, border=True)
@@ -382,7 +385,7 @@ def build_cost_to_serve(wb, students, rbs_refs, a_refs, date_min, date_max):
                  "No suburb/location field exists anywhere in the source data, so "
                  "travel cost and time are modelled as a flat weekly total "
                  "(Assumptions sheet) allocated across students by their share "
-                 "of lessons delivered — not by per-suburb distance.",
+                 "of lessons delivered, not by per-suburb distance.",
        font=NOTE_FONT, wrap=True)
     ws.merge_cells("A2:H2")
     ws.row_dimensions[2].height = 30
@@ -447,7 +450,7 @@ def build_capacity(wb, a_refs, rbs_refs, cts_refs):
     sc(ws, "A2", "Max lessons/week is a hard ceiling on lesson-delivery time "
                  "only. Travel time is separate, additive time spent outside "
                  "it (owner already teaches at the scheduling ceiling), so it "
-                 "is not subtracted here — see Cost to serve for how travel "
+                 "is not subtracted here. See Cost to serve for how travel "
                  "time is treated as unpaid capacity consumed per student.",
        font=NOTE_FONT, wrap=True)
     ws.merge_cells("A2:C2")
@@ -459,18 +462,18 @@ def build_capacity(wb, a_refs, rbs_refs, cts_refs):
     rows = [
         ("max_lessons", "Max lessons per week (scheduling ceiling)", f"={A('max_lessons_per_week')}", INT_FMT, GREEN, ""),
         ("max_hours", "Max teachable hours per week", f"={A('max_teachable_hours')}", NUM1, GREEN, ""),
-        ("travel_hours", "Travel time per week (hrs, additive)", f"={A('travel_time_per_week')}", NUM1, GREEN, "Not subtracted from teaching ceiling — see note above."),
-        ("total_commitment", "Total weekly time commitment at full capacity", "=B5+B6", NUM1, BLACK, "Teaching ceiling + travel time — the real total workload if fully booked."),
+        ("travel_hours", "Travel time per week (hrs, additive)", f"={A('travel_time_per_week')}", NUM1, GREEN, "Not subtracted from teaching ceiling. See note above."),
+        ("total_commitment", "Total weekly time commitment at full capacity", "=B5+B6", NUM1, BLACK, "Teaching ceiling + travel time: the real total workload if fully booked."),
         (None, None, None, None, None, None),
         ("actual_hours", "Actual hours delivered/week (avg)", f"='Revenue by student'!$D${rbs_refs['total_row']}/{A('weeks_per_term')}", NUM2, GREEN, "Averaged over the 9-week extract."),
         ("actual_lessons", "Actual lessons delivered/week (avg)", f"='Revenue by student'!$C${rbs_refs['total_row']}/{A('weeks_per_term')}", NUM2, GREEN, ""),
         ("utilisation", "Utilisation (actual hrs ÷ max teachable hrs)", "=IFERROR(B9/B5,0)", PCT1, BLACK, "How close to the scheduling ceiling the business ran."),
         (None, None, None, None, None, None),
-        ("scheduled_lessons", "Scheduled lessons/week (avg)", f"='Revenue by student'!$B${rbs_refs['total_row']}/{A('weeks_per_term')}", NUM2, GREEN, "Already equal to the max — see note below."),
+        ("scheduled_lessons", "Scheduled lessons/week (avg)", f"='Revenue by student'!$B${rbs_refs['total_row']}/{A('weeks_per_term')}", NUM2, GREEN, "Already equal to the max. See note below."),
         ("showup_rate", "Show-up rate (delivered ÷ scheduled)", "=IFERROR(B10/B13,0)", PCT1, BLACK, "Scheduled already sits at the max lessons/week ceiling, so this equals utilisation above: the constraint here is no-shows/cancellations, not unfilled slots."),
         (None, None, None, None, None, None),
         ("ceiling_revenue", "Ceiling annual revenue (if every slot delivered)", f"=B5*{A('working_weeks_per_year')}*{A('hourly_rate')}", CURRENCY, GREEN, "Max teachable hrs × working weeks/yr × hourly rate."),
-        ("actual_pace", "Actual annualised revenue pace", f"={RBS_TOT}/{A('weeks_per_term')}*{A('working_weeks_per_year')}", CURRENCY, GREEN, "Extrapolated run-rate, NOT an actual full-year figure — the business wound up ~18 Sept 2026."),
+        ("actual_pace", "Actual annualised revenue pace", f"={RBS_TOT}/{A('weeks_per_term')}*{A('working_weeks_per_year')}", CURRENCY, GREEN, "Extrapolated run-rate, NOT an actual full-year figure; the business wound up ~18 Sept 2026."),
     ]
 
     r = 4
@@ -500,7 +503,8 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
 
     A = lambda k: f"Assumptions!{a_refs[k]}"
 
-    sc(ws, "A3", "Period actuals (9 weeks, from the extract)", font=SECTION_FONT, fill=GREY_FILL)
+    sc(ws, "A3", "Period actuals (9 weeks, from the extract)")
+    style_header_row(ws, 3, 1, 3)
     ws.merge_cells("A3:C3")
     labels = [
         ("Gross revenue", f"='Revenue by student'!${'E'}${rbs_refs['total_row']}", GREEN, ""),
@@ -508,21 +512,23 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
         ("Net operating income", "=B4+B5", BLACK, ""),
         ("Super provision", f"=B6*{A('super_rate')}", GREEN, ""),
         ("Taxable income after super", "=B6-B7", BLACK, ""),
-        ("Tax provision", f"=B8*{A('tax_rate')}", GREEN, "ESTIMATE only — see Assumptions sheet note."),
+        ("Tax provision", f"=B8*{A('tax_rate')}", GREEN, "ESTIMATE only. See Assumptions sheet note."),
         ("Net income (period)", "=B6-B7-B9", BLACK, ""),
     ]
     r = 4
     for label, formula, font, note in labels:
-        sc(ws, f"A{r}", label, border=True, bold=(label in ("Net operating income", "Net income (period)")))
-        sc(ws, f"B{r}", formula, font=font, number_format=CURRENCY, border=True,
-           bold=(label in ("Net operating income", "Net income (period)")))
+        is_total = label in ("Net operating income", "Net income (period)")
+        sc(ws, f"A{r}", label, border=True, bold=is_total)
+        sc(ws, f"B{r}", formula, font=(BOLD if is_total else font), number_format=CURRENCY, border=True)
         sc(ws, f"C{r}", note, font=NOTE_FONT, wrap=True, border=True)
         r += 1
 
-    r += 1
-    sc(ws, f"A{r}", "Annualised run-rate (extrapolated — NOT an actual full-year "
-                     "figure; the business wound up ~18 Sept 2026)", font=SECTION_FONT, fill=GREY_FILL)
+    r += 2
+    sc(ws, f"A{r}", "Annualised run-rate (extrapolated, NOT an actual full-year "
+                     "figure; the business wound up ~18 Sept 2026)")
+    style_header_row(ws, r, 1, 3)
     ws.merge_cells(f"A{r}:C{r}")
+    ws.row_dimensions[r].height = 30
     r += 1
     sc(ws, f"A{r}", "Annualisation factor (working weeks/yr ÷ weeks/term)", border=True, wrap=True)
     sc(ws, f"B{r}", f"={A('working_weeks_per_year')}/{A('weeks_per_term')}", font=GREEN,
@@ -535,12 +541,13 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
                   "Super provision", "Taxable income after super", "Tax provision",
                   "Net income (annualised)"]:
         period_row = 4 + (r - ann_start)
-        sc(ws, f"A{r}", label, border=True, bold=(label in ("Net operating income", "Net income (annualised)")))
-        sc(ws, f"B{r}", f"=B{period_row}*$B${factor_row}", font=BLACK, number_format=CURRENCY, border=True,
-           bold=(label in ("Net operating income", "Net income (annualised)")))
+        is_total = label in ("Net operating income", "Net income (annualised)")
+        sc(ws, f"A{r}", label, border=True, bold=is_total)
+        sc(ws, f"B{r}", f"=B{period_row}*$B${factor_row}", font=(BOLD if is_total else BLACK),
+           number_format=CURRENCY, border=True)
         r += 1
 
-    return ws
+    return ws, ann_start, ann_start + 1
 
 
 def build_scenarios(wb, a_refs, capacity_refs):
@@ -553,12 +560,12 @@ def build_scenarios(wb, a_refs, capacity_refs):
     sc(ws, "A1", "Scenarios", font=TITLE_FONT)
     ws.merge_cells("A1:D1")
     sc(ws, "A2", "All three columns are live formulas driven by the "
-                 "multipliers on the Assumptions sheet — not separate "
+                 "multipliers on the Assumptions sheet, not separate "
                  "copied models. Vehicle/travel cost is held constant across "
                  "scenarios: there's no distance-based driver in the data to "
                  "scale it with lesson volume.", font=NOTE_FONT, wrap=True)
     ws.merge_cells("A2:D2")
-    ws.row_dimensions[2].height = 30
+    ws.row_dimensions[2].height = 45
 
     header_row = 4
     sc(ws, f"A{header_row}", "")
@@ -587,7 +594,7 @@ def build_scenarios(wb, a_refs, capacity_refs):
     sc(ws, f"A{r}", "Annualised revenue ($)", border=True, bold=True)
     for col in "BCD":
         sc(ws, f"{col}{r}", f"={col}{lessons_row}*{A('working_weeks_per_year')}*{col}{rate_row}",
-           font=BLACK, number_format=CURRENCY, border=True, bold=True)
+           font=BOLD, number_format=CURRENCY, border=True)
 
     r += 1
     cost_row = r
@@ -600,7 +607,7 @@ def build_scenarios(wb, a_refs, capacity_refs):
     noi_row = r
     sc(ws, f"A{r}", "Net operating income ($)", border=True, bold=True)
     for col in "BCD":
-        sc(ws, f"{col}{r}", f"={col}{rev_row}-{col}{cost_row}", font=BLACK, number_format=CURRENCY, border=True, bold=True)
+        sc(ws, f"{col}{r}", f"={col}{rev_row}-{col}{cost_row}", font=BOLD, number_format=CURRENCY, border=True)
 
     r += 1
     super_row = r
@@ -625,26 +632,22 @@ def build_scenarios(wb, a_refs, capacity_refs):
     sc(ws, f"A{r}", "Net income (annualised, $)", border=True, bold=True)
     for col in "BCD":
         sc(ws, f"{col}{r}", f"={col}{noi_row}-{col}{super_row}-{col}{tax_row}",
-           font=BLACK, number_format=CURRENCY, border=True, bold=True)
+           font=BOLD, number_format=CURRENCY, border=True)
 
+    # Selected-scenario callout: a plain two-column (label | value) summary,
+    # matching the "Total vehicle running cost" style callout on Cost to
+    # serve -- not spanning C:D, since merging empty cells into the value
+    # box just leaves dead space rather than a deliberate-looking table.
     r += 2
     sc(ws, f"A{r}", "Selected scenario (Assumptions!scenario_switch)",
        bold=True, border=True, wrap=True)
     sc(ws, f"B{r}", f'=CHOOSE({A("scenario_switch")},B{header_row},C{header_row},D{header_row})',
-       font=GREEN, border=True)
-    ws[f"C{r}"].border = BOX
-    ws[f"D{r}"].border = BOX
-    ws.merge_cells(f"B{r}:D{r}")
+       font=BLACK, border=True)
     ws.row_dimensions[r].height = 30
     r += 1
-    sc(ws, f"A{r}", "Selected scenario net income ($)",
-       bold=True, border=True, wrap=True)
+    sc(ws, f"A{r}", "Selected scenario net income ($)", bold=True, border=True, wrap=True)
     sc(ws, f"B{r}", f'=CHOOSE({A("scenario_switch")},B{net_row},C{net_row},D{net_row})',
-       font=GREEN, number_format=CURRENCY, border=True, bold=True)
-    ws[f"C{r}"].border = BOX
-    ws[f"D{r}"].border = BOX
-    ws.merge_cells(f"B{r}:D{r}")
-    ws.row_dimensions[r].height = 30
+       font=BOLD, number_format=CURRENCY, border=True)
 
     return ws
 
@@ -716,11 +719,10 @@ def main():
     _, rbs_refs = build_revenue_by_student(wb, students, (data_first, data_last))
     _, cts_refs = build_cost_to_serve(wb, students, rbs_refs, a_refs, date_min, date_max)
     _, capacity_refs = build_capacity(wb, a_refs, rbs_refs, cts_refs)
-    pl_ws = build_pl(wb, a_refs, rbs_refs, cts_refs)
+    pl_ws, pl_annual_revenue_row, pl_annual_cost_row = build_pl(wb, a_refs, rbs_refs, cts_refs)
     scenarios_ws = build_scenarios(wb, a_refs, capacity_refs)
-    # P&L annualised block: header row, factor row, then a 7-row waterfall ->
-    # Gross revenue is the first row of that waterfall, cost is the second.
-    sensitivity_ws = build_sensitivity(wb, a_refs, pl_annual_revenue_row=14, pl_annual_cost_row=15)
+    sensitivity_ws = build_sensitivity(
+        wb, a_refs, pl_annual_revenue_row=pl_annual_revenue_row, pl_annual_cost_row=pl_annual_cost_row)
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUT_PATH)
