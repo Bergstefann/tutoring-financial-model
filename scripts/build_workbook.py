@@ -628,26 +628,10 @@ def build_scenarios(wb, a_refs, capacity_refs):
         sc(ws, f"{col}{r}", f"={col}{taxable_row}*{A('tax_rate')}", font=GREEN, number_format=CURRENCY, border=True)
 
     r += 1
-    net_row = r
     sc(ws, f"A{r}", "Net income (annualised, $)", border=True, bold=True)
     for col in "BCD":
         sc(ws, f"{col}{r}", f"={col}{noi_row}-{col}{super_row}-{col}{tax_row}",
            font=BOLD, number_format=CURRENCY, border=True)
-
-    # Selected-scenario callout: a plain two-column (label | value) summary,
-    # matching the "Total vehicle running cost" style callout on Cost to
-    # serve -- not spanning C:D, since merging empty cells into the value
-    # box just leaves dead space rather than a deliberate-looking table.
-    r += 2
-    sc(ws, f"A{r}", "Selected scenario (Assumptions!scenario_switch)",
-       bold=True, border=True, wrap=True)
-    sc(ws, f"B{r}", f'=CHOOSE({A("scenario_switch")},B{header_row},C{header_row},D{header_row})',
-       font=BLACK, border=True)
-    ws.row_dimensions[r].height = 30
-    r += 1
-    sc(ws, f"A{r}", "Selected scenario net income ($)", bold=True, border=True, wrap=True)
-    sc(ws, f"B{r}", f'=CHOOSE({A("scenario_switch")},B{net_row},C{net_row},D{net_row})',
-       font=BOLD, number_format=CURRENCY, border=True)
 
     return ws
 
