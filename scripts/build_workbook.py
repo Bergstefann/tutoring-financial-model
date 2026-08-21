@@ -12,7 +12,6 @@ import csv
 from pathlib import Path
 
 import openpyxl
-from openpyxl.chart import BarChart, Reference
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
@@ -24,20 +23,24 @@ AS_AT_DATE = "2026-08-20"
 WIND_UP_DATE = "2026-09-18"
 
 # ---------------------------------------------------------------- styles --
-BLUE = Font(color="0000FF")
-BOLD_BLUE = Font(color="0000FF", bold=True)
+# Body text and fills are plain black / no-fill throughout -- only the header
+# row (HEADER_FONT/HEADER_FILL) keeps colour. BLUE/GREEN and the various
+# fills are retired to plain black / None rather than renamed, since that
+# keeps every existing font=BLUE / fill=YELLOW_FILL call site correct as-is.
+BLUE = Font(color="000000")
+BOLD_BLUE = Font(color="000000", bold=True)
 BLACK = Font(color="000000")
-GREEN = Font(color="008000")
+GREEN = Font(color="000000")
 BOLD = Font(bold=True)
-BOLD_GREEN = Font(color="008000", bold=True)
+BOLD_GREEN = Font(color="000000", bold=True)
 TITLE_FONT = Font(bold=True, size=14)
-SECTION_FONT = Font(bold=True, size=11, color="1F4E78")
-NOTE_FONT = Font(italic=True, size=9, color="666666")
+SECTION_FONT = Font(bold=True, size=11, color="000000")
+NOTE_FONT = Font(italic=True, size=9, color="000000")
 HEADER_FONT = Font(bold=True, color="FFFFFF")
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
-YELLOW_FILL = PatternFill("solid", fgColor="FFFF00")
-GREY_FILL = PatternFill("solid", fgColor="F2F2F2")
-PLACEHOLDER_FILL = PatternFill("solid", fgColor="FFD966")
+YELLOW_FILL = None
+GREY_FILL = None
+PLACEHOLDER_FILL = None
 
 CURRENCY = '$#,##0;($#,##0)'
 CURRENCY2 = '$#,##0.00;($#,##0.00)'
@@ -124,27 +127,11 @@ def build_readme(wb):
     ws.row_dimensions[r].height = 45
     r += 2
 
-    sc(ws, f"A{r}", "Colour key", font=SECTION_FONT)
-    r += 1
-    rows = [
-        ("Blue text", "Hardcoded input — a number typed in, not calculated"),
-        ("Black text", "Formula — calculated from other cells"),
-        ("Green text", "Cross-sheet link — formula that pulls from another sheet"),
-        ("Yellow fill", "Key assumption — worth checking before trusting the output"),
-        ("Orange fill", "Placeholder — not supplied; a stand-in value is used so the "
-                         "model runs, but it needs confirming"),
-    ]
-    for label, desc in rows:
-        sc(ws, f"A{r}", label, font=BOLD)
-        sc(ws, f"B{r}", desc, wrap=True)
-        r += 1
-    r += 1
-
     sc(ws, f"A{r}", "Sheet order", font=SECTION_FONT)
     r += 1
     sheet_list = [
         "Assumptions", "Data", "Revenue by student", "Cost to serve",
-        "Capacity", "P&L and provisioning", "Scenarios", "Sensitivity", "Charts",
+        "Capacity", "P&L and provisioning", "Scenarios", "Sensitivity",
     ]
     for name in sheet_list:
         sc(ws, f"A{r}", f"• {name}")
@@ -157,9 +144,7 @@ def build_readme(wb):
        "No suburb or address field exists anywhere in the source data, so "
        "travel cost/time is modelled as a flat weekly figure allocated "
        "across students by lesson share, not as a per-suburb distance "
-       "calculation. There is no suburb-level chart for the same reason. "
-       "The maximum teachable hours/week figure on the Assumptions sheet is "
-       "a placeholder (orange fill) pending confirmation.", wrap=True)
+       "calculation.", wrap=True)
     ws.merge_cells(f"A{r}:B{r}")
     ws.row_dimensions[r].height = 60
 
@@ -338,20 +323,19 @@ def build_data(wb, lessons):
 def build_revenue_by_student(wb, students, data_range):
     ws = wb.create_sheet("Revenue by student")
     ws.sheet_view.showGridLines = False
-    widths = {"A": 14, "B": 14, "C": 14, "D": 14, "E": 14, "F": 16, "G": 14, "H": 12, "I": 8}
+    widths = {"A": 14, "B": 14, "C": 14, "D": 14, "E": 14, "F": 16}
     for col, w in widths.items():
         ws.column_dimensions[col].width = w
 
     sc(ws, "A1", "Revenue by student", font=TITLE_FONT)
-    ws.merge_cells("A1:I1")
+    ws.merge_cells("A1:F1")
 
     header_row = 3
     headers = ["Student", "Lessons scheduled", "Lessons delivered", "Hours delivered",
-               "Gross revenue ($)", "Effective hourly rate ($/hr)", "Share of revenue",
-               "Tie-break (rank helper)", "Rank"]
+               "Gross revenue ($)", "Effective hourly rate ($/hr)"]
     for i, h in enumerate(headers, start=1):
         sc(ws, f"{get_column_letter(i)}{header_row}", h)
-    style_header_row(ws, header_row, 1, 9)
+    style_header_row(ws, header_row, 1, 6)
 
     first_row = header_row + 1
     last_row = first_row + len(students) - 1
@@ -367,16 +351,12 @@ def build_revenue_by_student(wb, students, data_range):
         sc(ws, f"D{r}", f'=SUMIFS({dD},{dA},A{r},{dC},"Y")/60', font=BLACK, number_format=NUM2, border=True)
         sc(ws, f"E{r}", f'=SUMIFS({dE},{dA},A{r},{dC},"Y")', font=BLACK, number_format=CURRENCY, border=True)
         sc(ws, f"F{r}", f'=IFERROR(E{r}/D{r},0)', font=BLACK, number_format=CURRENCY, border=True)
-        sc(ws, f"G{r}", f'=IFERROR(E{r}/$E${total_row},0)', font=BLACK, number_format=PCT1, border=True)
-        sc(ws, f"H{r}", f'=E{r}+(ROW()-{first_row})/100000', font=NOTE_FONT, number_format=NUM2, border=True)
-        sc(ws, f"I{r}", f'=RANK(H{r},$H${first_row}:$H${last_row},0)', font=BLACK, number_format=INT_FMT, border=True)
 
     sc(ws, f"A{total_row}", "TOTAL", bold=True, border=True)
     for col in "BCDE":
         sc(ws, f"{col}{total_row}", f'=SUM({col}{first_row}:{col}{last_row})',
            font=BOLD, number_format=CURRENCY if col == "E" else (NUM2 if col == "D" else INT_FMT), border=True)
     sc(ws, f"F{total_row}", f'=IFERROR(E{total_row}/D{total_row},0)', font=BOLD, number_format=CURRENCY, border=True)
-    sc(ws, f"G{total_row}", f'=SUM(G{first_row}:G{last_row})', font=BOLD, number_format=PCT1, border=True)
 
     ws.freeze_panes = f"A{first_row}"
     refs = {
@@ -392,36 +372,37 @@ def build_revenue_by_student(wb, students, data_range):
 def build_cost_to_serve(wb, students, rbs_refs, a_refs, date_min, date_max):
     ws = wb.create_sheet("Cost to serve")
     ws.sheet_view.showGridLines = False
-    widths = {"A": 14, "B": 16, "C": 16, "D": 18, "E": 18, "F": 14, "G": 14, "H": 14, "I": 20, "J": 12, "K": 8}
+    widths = {"A": 14, "B": 16, "C": 16, "D": 18, "E": 18, "F": 14, "G": 14, "H": 14}
     for col, w in widths.items():
         ws.column_dimensions[col].width = w
 
     sc(ws, "A1", "Cost to serve", font=TITLE_FONT)
-    ws.merge_cells("A1:K1")
+    ws.merge_cells("A1:H1")
     sc(ws, "A2", f"Period covered: {date_min} to {date_max} (9 weeks, one term). "
                  "No suburb/location field exists anywhere in the source data, so "
                  "travel cost and time are modelled as a flat weekly total "
                  "(Assumptions sheet) allocated across students by their share "
                  "of lessons delivered — not by per-suburb distance.",
        font=NOTE_FONT, wrap=True)
-    ws.merge_cells("A2:K2")
+    ws.merge_cells("A2:H2")
     ws.row_dimensions[2].height = 30
 
-    sc(ws, "A4", "Total vehicle running cost (period)", bold=True)
+    sc(ws, "A4", "Total vehicle running cost (period)", bold=True, border=True, wrap=True)
     sc(ws, "B4", f"=Assumptions!{a_refs['vehicle_cost_per_week']}*Assumptions!{a_refs['weeks_per_term']}",
-       font=GREEN, number_format=CURRENCY)
-    sc(ws, "A5", "Total travel time (period, hours)", bold=True)
+       font=GREEN, number_format=CURRENCY, border=True)
+    ws.row_dimensions[4].height = 45
+    sc(ws, "A5", "Total travel time (period, hours)", bold=True, border=True, wrap=True)
     sc(ws, "B5", f"=Assumptions!{a_refs['travel_time_per_week']}*Assumptions!{a_refs['weeks_per_term']}",
-       font=GREEN, number_format=NUM2)
+       font=GREEN, number_format=NUM2, border=True)
+    ws.row_dimensions[5].height = 45
 
     header_row = 7
     headers = ["Student", "Lessons delivered", "Share of lessons delivered",
                "Allocated travel cost ($)", "Allocated travel time (hrs)",
-               "Gross revenue ($)", "Contribution ($)", "Committed hours",
-               "Contribution per hour committed ($/hr)", "Tie-break", "Rank"]
+               "Gross revenue ($)", "Contribution ($)", "Committed hours"]
     for i, h in enumerate(headers, start=1):
         sc(ws, f"{get_column_letter(i)}{header_row}", h)
-    style_header_row(ws, header_row, 1, 11)
+    style_header_row(ws, header_row, 1, 8)
 
     first_row = header_row + 1
     last_row = first_row + len(students) - 1
@@ -439,15 +420,11 @@ def build_cost_to_serve(wb, students, rbs_refs, a_refs, date_min, date_max):
         sc(ws, f"F{r}", f"='Revenue by student'!E{rbs_r}", font=GREEN, number_format=CURRENCY, border=True)
         sc(ws, f"G{r}", f'=F{r}-D{r}', font=BLACK, number_format=CURRENCY, border=True)
         sc(ws, f"H{r}", f"='Revenue by student'!D{rbs_r}+E{r}", font=GREEN, number_format=NUM2, border=True)
-        sc(ws, f"I{r}", f'=IFERROR(G{r}/H{r},0)', font=BLACK, number_format=CURRENCY2, border=True)
-        sc(ws, f"J{r}", f'=G{r}+(ROW()-{first_row})/100000', font=NOTE_FONT, number_format=NUM2, border=True)
-        sc(ws, f"K{r}", f'=RANK(J{r},$J${first_row}:$J${last_row},0)', font=BLACK, number_format=INT_FMT, border=True)
 
     sc(ws, f"A{total_row}", "TOTAL", bold=True, border=True)
     for col in "BDEFGH":
         fmt = CURRENCY if col in "DFG" else NUM2
         sc(ws, f"{col}{total_row}", f'=SUM({col}{first_row}:{col}{last_row})', font=BOLD, number_format=fmt, border=True)
-    sc(ws, f"I{total_row}", f'=IFERROR(G{total_row}/H{total_row},0)', font=BOLD, number_format=CURRENCY2, border=True)
 
     ws.freeze_panes = f"A{first_row}"
     refs = {
@@ -547,8 +524,10 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
                      "figure; the business wound up ~18 Sept 2026)", font=SECTION_FONT, fill=GREY_FILL)
     ws.merge_cells(f"A{r}:C{r}")
     r += 1
-    sc(ws, f"A{r}", "Annualisation factor (working weeks/yr ÷ weeks/term)")
-    sc(ws, f"B{r}", f"={A('working_weeks_per_year')}/{A('weeks_per_term')}", font=GREEN, number_format=NUM2)
+    sc(ws, f"A{r}", "Annualisation factor (working weeks/yr ÷ weeks/term)", border=True, wrap=True)
+    sc(ws, f"B{r}", f"={A('working_weeks_per_year')}/{A('weeks_per_term')}", font=GREEN,
+       number_format=NUM2, border=True)
+    sc(ws, f"C{r}", "", border=True)
     factor_row = r
     r += 1
     ann_start = r
@@ -649,13 +628,23 @@ def build_scenarios(wb, a_refs, capacity_refs):
            font=BLACK, number_format=CURRENCY, border=True, bold=True)
 
     r += 2
-    sc(ws, f"A{r}", "Selected scenario (Assumptions!scenario_switch)", bold=True)
+    sc(ws, f"A{r}", "Selected scenario (Assumptions!scenario_switch)",
+       bold=True, border=True, wrap=True)
     sc(ws, f"B{r}", f'=CHOOSE({A("scenario_switch")},B{header_row},C{header_row},D{header_row})',
        font=GREEN, border=True)
+    ws[f"C{r}"].border = BOX
+    ws[f"D{r}"].border = BOX
+    ws.merge_cells(f"B{r}:D{r}")
+    ws.row_dimensions[r].height = 30
     r += 1
-    sc(ws, f"A{r}", "Selected scenario net income ($)", bold=True)
+    sc(ws, f"A{r}", "Selected scenario net income ($)",
+       bold=True, border=True, wrap=True)
     sc(ws, f"B{r}", f'=CHOOSE({A("scenario_switch")},B{net_row},C{net_row},D{net_row})',
        font=GREEN, number_format=CURRENCY, border=True, bold=True)
+    ws[f"C{r}"].border = BOX
+    ws[f"D{r}"].border = BOX
+    ws.merge_cells(f"B{r}:D{r}")
+    ws.row_dimensions[r].height = 30
 
     return ws
 
@@ -714,100 +703,6 @@ def build_sensitivity(wb, a_refs, pl_annual_revenue_row, pl_annual_cost_row):
     return ws
 
 
-def add_bar_chart(ws, anchor, title, cats_ref, data_ref, y_title, x_title=""):
-    chart = BarChart()
-    chart.type = "col"
-    chart.title = title
-    chart.y_axis.title = y_title
-    chart.x_axis.title = x_title
-    chart.width = 22
-    chart.height = 10
-    chart.add_data(data_ref, titles_from_data=False)
-    chart.set_categories(cats_ref)
-    chart.legend = None
-    chart.y_axis.scaling.min = 0
-    ws.add_chart(chart, anchor)
-
-
-def build_charts(wb, rbs_ws, rbs_refs, cts_ws, cts_refs, capacity_ws, capacity_refs):
-    ws = wb.create_sheet("Charts")
-    ws.sheet_view.showGridLines = False
-    ws.column_dimensions["A"].width = 16
-    ws.column_dimensions["B"].width = 16
-
-    sc(ws, "A1", "Charts", font=TITLE_FONT)
-    sc(ws, "A2", "Sorted helper tables backing each chart are below/beside "
-                 "it — built with INDEX/MATCH against a rank column on "
-                 "the source sheet, not a native sort.", font=NOTE_FONT, wrap=True)
-
-    # --- Chart 1: revenue concentration by student (sorted desc) ---
-    sc(ws, "A4", "Revenue concentration by student (sorted, high→low)", font=SECTION_FONT)
-    sc(ws, "A5", "Student", bold=True)
-    sc(ws, "B5", "Gross revenue ($)", bold=True)
-    n = rbs_refs["last_row"] - rbs_refs["first_row"] + 1
-    rbs_first, rbs_last = rbs_refs["first_row"], rbs_refs["last_row"]
-    for i in range(n):
-        r = 6 + i
-        rank_target = i + 1
-        sc(ws, f"A{r}",
-           f"=INDEX('Revenue by student'!$A${rbs_first}:$A${rbs_last},"
-           f"MATCH({rank_target},'Revenue by student'!$I${rbs_first}:$I${rbs_last},0))",
-           font=GREEN, number_format=INT_FMT)
-        sc(ws, f"B{r}",
-           f"=INDEX('Revenue by student'!$E${rbs_first}:$E${rbs_last},"
-           f"MATCH({rank_target},'Revenue by student'!$I${rbs_first}:$I${rbs_last},0))",
-           font=GREEN, number_format=CURRENCY)
-    last_sorted_row = 6 + n - 1
-    add_bar_chart(
-        ws, "D4", "Revenue concentration by student",
-        Reference(ws, min_col=1, min_row=6, max_row=last_sorted_row),
-        Reference(ws, min_col=2, min_row=6, max_row=last_sorted_row),
-        "Gross revenue ($)",
-    )
-
-    # --- Chart 2: contribution per hour committed, by student (sorted desc) ---
-    base2 = last_sorted_row + 3
-    sc(ws, f"A{base2}", "Contribution per hour committed, by student (sorted, high→low)", font=SECTION_FONT)
-    sc(ws, f"A{base2+1}", "Student", bold=True)
-    sc(ws, f"B{base2+1}", "Contribution/hr ($)", bold=True)
-    cts_first, cts_last = cts_refs["first_row"], cts_refs["last_row"]
-    m = cts_last - cts_first + 1
-    for i in range(m):
-        r = base2 + 2 + i
-        rank_target = i + 1
-        sc(ws, f"A{r}",
-           f"=INDEX('Cost to serve'!$A${cts_first}:$A${cts_last},"
-           f"MATCH({rank_target},'Cost to serve'!$K${cts_first}:$K${cts_last},0))",
-           font=GREEN, number_format=INT_FMT)
-        sc(ws, f"B{r}",
-           f"=INDEX('Cost to serve'!$I${cts_first}:$I${cts_last},"
-           f"MATCH({rank_target},'Cost to serve'!$K${cts_first}:$K${cts_last},0))",
-           font=GREEN, number_format=CURRENCY2)
-    last2 = base2 + 2 + m - 1
-    add_bar_chart(
-        ws, f"D{base2}", "Contribution per hour committed, by student",
-        Reference(ws, min_col=1, min_row=base2 + 2, max_row=last2),
-        Reference(ws, min_col=2, min_row=base2 + 2, max_row=last2),
-        "Contribution per hour ($/hr)",
-    )
-
-    # --- Chart 3: utilisation vs ceiling ---
-    base3 = last2 + 3
-    sc(ws, f"A{base3}", "Utilisation vs capacity ceiling (hrs/week)", font=SECTION_FONT)
-    sc(ws, f"A{base3+1}", "Actual hours/week (avg)", border=True)
-    sc(ws, f"B{base3+1}", f"=Capacity!{capacity_refs['actual_hours']}", font=GREEN, number_format=NUM2, border=True)
-    sc(ws, f"A{base3+2}", "Max teachable hours/week (ceiling)", border=True)
-    sc(ws, f"B{base3+2}", f"=Capacity!{capacity_refs['max_hours']}", font=GREEN, number_format=NUM2, border=True)
-    add_bar_chart(
-        ws, f"D{base3}", "Utilisation vs capacity ceiling",
-        Reference(ws, min_col=1, min_row=base3 + 1, max_row=base3 + 2),
-        Reference(ws, min_col=2, min_row=base3 + 1, max_row=base3 + 2),
-        "Hours/week",
-    )
-
-    return ws
-
-
 def main():
     lessons = load_lessons()
     students = sorted({r["student_pseudonym"] for r in lessons})
@@ -818,15 +713,14 @@ def main():
     build_readme(wb)
     a_ws, a_refs = build_assumptions(wb)
     data_ws, data_first, data_last = build_data(wb, lessons)
-    rbs_ws, rbs_refs = build_revenue_by_student(wb, students, (data_first, data_last))
-    cts_ws, cts_refs = build_cost_to_serve(wb, students, rbs_refs, a_refs, date_min, date_max)
-    capacity_ws, capacity_refs = build_capacity(wb, a_refs, rbs_refs, cts_refs)
+    _, rbs_refs = build_revenue_by_student(wb, students, (data_first, data_last))
+    _, cts_refs = build_cost_to_serve(wb, students, rbs_refs, a_refs, date_min, date_max)
+    _, capacity_refs = build_capacity(wb, a_refs, rbs_refs, cts_refs)
     pl_ws = build_pl(wb, a_refs, rbs_refs, cts_refs)
     scenarios_ws = build_scenarios(wb, a_refs, capacity_refs)
     # P&L annualised block: header row, factor row, then a 7-row waterfall ->
     # Gross revenue is the first row of that waterfall, cost is the second.
     sensitivity_ws = build_sensitivity(wb, a_refs, pl_annual_revenue_row=14, pl_annual_cost_row=15)
-    build_charts(wb, rbs_ws, rbs_refs, cts_ws, cts_refs, capacity_ws, capacity_refs)
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUT_PATH)
