@@ -12,6 +12,7 @@ import csv
 from pathlib import Path
 
 import openpyxl
+from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
@@ -524,16 +525,14 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
         r += 1
 
     r += 2
-    sc(ws, f"A{r}", "Annualised run-rate (extrapolated, NOT an actual full-year "
-                     "figure; the business wound up ~18 Sept 2026)")
-    style_header_row(ws, r, 1, 3)
-    ws.merge_cells(f"A{r}:C{r}")
-    ws.row_dimensions[r].height = 30
+    sc(ws, f"A{r}", "Annualised run-rate")
+    style_header_row(ws, r, 1, 2)
+    ws.merge_cells(f"A{r}:B{r}")
     r += 1
     sc(ws, f"A{r}", "Annualisation factor", border=True)
     sc(ws, f"B{r}", f"={A('working_weeks_per_year')}/{A('weeks_per_term')}", font=GREEN,
        number_format=NUM2, border=True)
-    sc(ws, f"C{r}", "Working weeks/yr ÷ weeks/term.", font=NOTE_FONT, wrap=True, border=True)
+    ws[f"B{r}"].comment = Comment("Working weeks/yr ÷ weeks/term.", "Model")
     factor_row = r
     r += 1
     ann_start = r
@@ -546,6 +545,12 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
         sc(ws, f"B{r}", f"=B{period_row}*$B${factor_row}", font=(BOLD if is_total else BLACK),
            number_format=CURRENCY, border=True)
         r += 1
+
+    r += 1
+    sc(ws, f"A{r}", "Extrapolated run-rate, NOT an actual full-year figure; the business "
+                     "wound up ~18 Sept 2026.", font=NOTE_FONT, wrap=True)
+    ws.merge_cells(f"A{r}:B{r}")
+    ws.row_dimensions[r].height = 30
 
     return ws, ann_start, ann_start + 1
 
