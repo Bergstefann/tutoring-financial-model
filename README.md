@@ -64,6 +64,12 @@ Two of these deserve flagging plainly rather than burying in the sheet:
   once travel was counted, because the location data to answer that question doesn't exist.
   Inventing it wasn't an option.
 
+Terminology note: "super" (e.g. the 12.5% rate in Findings) is Australian
+superannuation terminology inherited from the source assumptions. The business itself
+operates in Belgium, where the equivalent statutory social contribution would be the
+applicable Belgian rate; the 12.5% is the modelled contribution rate, not an assertion
+about Belgian law.
+
 ## Findings
 
 **P&L (9-week extract):** $11,840 gross revenue → $10,958 after $882 of allocated travel
@@ -88,6 +94,16 @@ volume increase would likely add cost this simplification doesn't capture.
 
 ![Scenarios](docs/screenshots/scenarios.png)
 ![Sensitivity](docs/screenshots/sensitivity.png)
+
+**Revenue concentration, cost-to-serve and capacity.** Three of the brief's Phase-3
+readouts — whose the revenue is, what serving each student costs, and how far the
+teachable-hours ceiling constrained the business.
+
+![Revenue by student](docs/screenshots/revenue-by-student.png)
+
+![Cost to serve](docs/screenshots/cost-to-serve.png)
+
+![Capacity utilisation](docs/screenshots/capacity.png)
 
 ## Limitations (stated plainly, not hidden in a footnote)
 

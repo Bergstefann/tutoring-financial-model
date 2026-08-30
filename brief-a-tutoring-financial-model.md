@@ -59,6 +59,10 @@ Separate sheets, in this order. Inputs are never mixed into calculations.
    (12.5%), income tax provisioning rate, vehicle cost per km, working weeks per year,
    maximum teachable hours per week, travel time per suburb hop. Each carries a source note
    saying whether it came from the data, from ATO/statutory rates, or from my own estimate.
+
+   Note on terms: "super" and "ATO" are Australian modelling vocabulary (superannuation,
+   Australian Tax Office) in a Belgian-market artefact. Keep the source term, but the README
+   carries a one-line clarification that the rate is a modelled contribution, not Brussels law.
 3. **Data**: the anonymised lesson and invoice history, exported from SQLite as a proper
    table with typed columns. This is the factual base. Nothing here is hand-edited.
 4. **Revenue by student**. Per student: lessons delivered, hours, effective hourly
