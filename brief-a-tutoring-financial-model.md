@@ -31,7 +31,7 @@ their parents, and home suburbs.
 
 If you can't anonymise something without destroying the analysis, stop and ask.
 
-## Phase 1 — Inventory the source data. Build nothing yet.
+## Phase 1: Inventory the source data. Build nothing yet.
 
 Read the Invoicer SQLite schema and report what actually exists:
 
@@ -47,7 +47,7 @@ Read the Invoicer SQLite schema and report what actually exists:
 **CHECKPOINT: report this before modelling.** I'll fill in anything that has to come from
 my own knowledge (suburb per student, travel distances, vehicle running cost).
 
-## Phase 2 — The workbook
+## Phase 2: The workbook
 
 ### Structure
 
@@ -95,7 +95,7 @@ Separate sheets, in this order. Inputs are never mixed into calculations.
 - Verify by opening and checking real values, not by assuming the formula is right. A
   workbook with zero formula errors can still be entirely wrong.
 
-## Phase 3 — Repository packaging
+## Phase 3: Repository packaging
 
 New repo, or a `spreadsheets/` area. Recommend which and why, given the three-pillar
 structure. Either way it sits **under the data pillar**, not as a separate weaker item.
