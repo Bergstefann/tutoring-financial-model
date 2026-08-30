@@ -32,7 +32,6 @@ SHEETS = [
     ("P&L and provisioning", "pl.png", False),
     ("Scenarios", "scenarios.png", True),
     ("Sensitivity", "sensitivity.png", True),
-    ("Charts", "charts.png", False),
 ]
 
 DPI = 200
