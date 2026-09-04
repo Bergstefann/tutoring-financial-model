@@ -24,24 +24,38 @@ AS_AT_DATE = "2026-08-20"
 WIND_UP_DATE = "2026-09-18"
 
 # ---------------------------------------------------------------- styles --
-# Body text and fills are plain black / no-fill throughout -- only the header
-# row (HEADER_FONT/HEADER_FILL) keeps colour. BLUE/GREEN and the various
-# fills are retired to plain black / None rather than renamed, since that
-# keeps every existing font=BLUE / fill=YELLOW_FILL call site correct as-is.
-# BODY_SIZE is the one font size used everywhere except TITLE_FONT (sheet
-# titles are deliberately larger); every other font below sets it explicitly
-# so no cell falls back to an implicit, potentially-inconsistent default.
+# One ink colour for body text, one for notes, and colour used sparingly:
+# the header row (HEADER_FONT/HEADER_FILL), a light wash on subtotal rows
+# (TOTAL_FILL), and the coral accent reserved for the closing net-income row
+# of a statement (ACCENT_FONT/ACCENT_FILL). BLUE/GREEN and YELLOW_FILL/
+# GREY_FILL are retired to the body font / None rather than renamed, since
+# that keeps every existing font=BLUE / fill=YELLOW_FILL call site correct
+# as-is. BODY_SIZE is the one font size used everywhere except TITLE_FONT
+# (sheet titles are deliberately larger); every other font below sets it
+# explicitly, and sc() falls back to BODY_FONT, so no cell lands on Excel's
+# implicit Calibri default.
 BODY_SIZE = 11
-BLUE = Font(color="000000", size=BODY_SIZE)
-BOLD_BLUE = Font(color="000000", bold=True, size=BODY_SIZE)
-BLACK = Font(color="000000", size=BODY_SIZE)
-GREEN = Font(color="000000", size=BODY_SIZE)
-BOLD = Font(bold=True, size=BODY_SIZE)
-TITLE_FONT = Font(bold=True, size=14)
-SECTION_FONT = Font(bold=True, size=BODY_SIZE, color="000000")
-NOTE_FONT = Font(italic=True, size=BODY_SIZE, color="000000")
-HEADER_FONT = Font(bold=True, color="FFFFFF", size=BODY_SIZE)
-HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
+FONT_NAME = "Segoe UI"
+INK = "2D3142"
+MUTED = "4F5D75"
+ACCENT = "EB6C36"
+BLUE = Font(name=FONT_NAME, color=INK, size=BODY_SIZE)
+BOLD_BLUE = Font(name=FONT_NAME, color=INK, bold=True, size=BODY_SIZE)
+BLACK = Font(name=FONT_NAME, color=INK, size=BODY_SIZE)
+GREEN = Font(name=FONT_NAME, color=INK, size=BODY_SIZE)
+BOLD = Font(name=FONT_NAME, bold=True, color=INK, size=BODY_SIZE)
+BODY_FONT = Font(name=FONT_NAME, color=INK, size=BODY_SIZE)
+TITLE_FONT = Font(name=FONT_NAME, bold=True, size=15, color=INK)
+SECTION_FONT = Font(name=FONT_NAME, bold=True, size=BODY_SIZE, color=INK)
+NOTE_FONT = Font(name=FONT_NAME, italic=True, size=BODY_SIZE, color=MUTED)
+HEADER_FONT = Font(name=FONT_NAME, bold=True, color="FFFFFF", size=BODY_SIZE)
+HEADER_FILL = PatternFill("solid", fgColor=INK)
+# Subtotal rows get a light ink wash; the closing net-income row of each
+# statement gets the coral accent, so the figure the reader is looking for
+# is the one that stands out.
+ACCENT_FONT = Font(name=FONT_NAME, bold=True, color=ACCENT, size=BODY_SIZE)
+TOTAL_FILL = PatternFill("solid", fgColor="EDEEF1")
+ACCENT_FILL = PatternFill("solid", fgColor="FCEFE9")
 YELLOW_FILL = None
 GREY_FILL = None
 PLACEHOLDER_FILL = None
@@ -54,7 +68,7 @@ NUM2 = '0.00'
 INT_FMT = '0'
 DATE_FMT = 'yyyy-mm-dd'
 
-THIN = Side(style="thin", color="BFBFBF")
+THIN = Side(style="thin", color="D8DAE0")
 BOX = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 
 
@@ -75,6 +89,8 @@ def sc(ws, addr, value, font=None, fill=None, number_format=None, bold=False,
         c.font = font
     elif bold:
         c.font = BOLD
+    else:
+        c.font = BODY_FONT
     if fill is not None:
         c.fill = fill
     if number_format is not None:
@@ -519,8 +535,12 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
     r = 4
     for label, formula, font, note in labels:
         is_total = label in ("Net operating income", "Net income (period)")
-        sc(ws, f"A{r}", label, border=True, bold=is_total)
-        sc(ws, f"B{r}", formula, font=(BOLD if is_total else font), number_format=CURRENCY, border=True)
+        is_final = label == "Net income (period)"
+        row_fill = ACCENT_FILL if is_final else (TOTAL_FILL if is_total else None)
+        emphasis = ACCENT_FONT if is_final else (BOLD if is_total else None)
+        sc(ws, f"A{r}", label, border=True, font=emphasis, fill=row_fill)
+        sc(ws, f"B{r}", formula, font=(emphasis or font), number_format=CURRENCY,
+           border=True, fill=row_fill)
         sc(ws, f"C{r}", note, font=NOTE_FONT, wrap=True, border=True)
         r += 1
 
@@ -541,9 +561,12 @@ def build_pl(wb, a_refs, rbs_refs, cts_refs):
                   "Net income (annualised)"]:
         period_row = 4 + (r - ann_start)
         is_total = label in ("Net operating income", "Net income (annualised)")
-        sc(ws, f"A{r}", label, border=True, bold=is_total)
-        sc(ws, f"B{r}", f"=B{period_row}*$B${factor_row}", font=(BOLD if is_total else BLACK),
-           number_format=CURRENCY, border=True)
+        is_final = label == "Net income (annualised)"
+        row_fill = ACCENT_FILL if is_final else (TOTAL_FILL if is_total else None)
+        emphasis = ACCENT_FONT if is_final else (BOLD if is_total else None)
+        sc(ws, f"A{r}", label, border=True, font=emphasis, fill=row_fill)
+        sc(ws, f"B{r}", f"=B{period_row}*$B${factor_row}", font=(emphasis or BLACK),
+           number_format=CURRENCY, border=True, fill=row_fill)
         r += 1
 
     r += 1
@@ -596,10 +619,10 @@ def build_scenarios(wb, a_refs, capacity_refs):
 
     r += 1
     rev_row = r
-    sc(ws, f"A{r}", "Annualised revenue ($)", border=True, bold=True)
+    sc(ws, f"A{r}", "Annualised revenue ($)", border=True, bold=True, fill=TOTAL_FILL)
     for col in "BCD":
         sc(ws, f"{col}{r}", f"={col}{lessons_row}*{A('working_weeks_per_year')}*{col}{rate_row}",
-           font=BOLD, number_format=CURRENCY, border=True)
+           font=BOLD, number_format=CURRENCY, border=True, fill=TOTAL_FILL)
 
     r += 1
     cost_row = r
@@ -610,9 +633,10 @@ def build_scenarios(wb, a_refs, capacity_refs):
 
     r += 1
     noi_row = r
-    sc(ws, f"A{r}", "Net operating income ($)", border=True, bold=True)
+    sc(ws, f"A{r}", "Net operating income ($)", border=True, bold=True, fill=TOTAL_FILL)
     for col in "BCD":
-        sc(ws, f"{col}{r}", f"={col}{rev_row}-{col}{cost_row}", font=BOLD, number_format=CURRENCY, border=True)
+        sc(ws, f"{col}{r}", f"={col}{rev_row}-{col}{cost_row}", font=BOLD,
+           number_format=CURRENCY, border=True, fill=TOTAL_FILL)
 
     r += 1
     super_row = r
@@ -633,10 +657,10 @@ def build_scenarios(wb, a_refs, capacity_refs):
         sc(ws, f"{col}{r}", f"={col}{taxable_row}*{A('tax_rate')}", font=GREEN, number_format=CURRENCY, border=True)
 
     r += 1
-    sc(ws, f"A{r}", "Net income (annualised, $)", border=True, bold=True)
+    sc(ws, f"A{r}", "Net income (annualised, $)", border=True, font=ACCENT_FONT, fill=ACCENT_FILL)
     for col in "BCD":
         sc(ws, f"{col}{r}", f"={col}{noi_row}-{col}{super_row}-{col}{tax_row}",
-           font=BOLD, number_format=CURRENCY, border=True)
+           font=ACCENT_FONT, number_format=CURRENCY, border=True, fill=ACCENT_FILL)
 
     return ws
 
@@ -702,6 +726,9 @@ def main():
     date_max = max(r["lesson_date"] for r in lessons)
 
     wb = openpyxl.Workbook()
+    # Anything openpyxl writes without an explicit font inherits Normal, so set
+    # it here too rather than leaving those cells on Excel's Calibri default.
+    wb._named_styles["Normal"].font = Font(name=FONT_NAME, color=INK, size=BODY_SIZE)
     build_readme(wb)
     a_ws, a_refs = build_assumptions(wb)
     data_ws, data_first, data_last = build_data(wb, lessons)
