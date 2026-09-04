@@ -1,5 +1,7 @@
 # Tutoring Business Financial Model
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A driver-based Excel financial model of a private music-tutoring business, built from its
 actual lesson-schedule and billing data for one school term rather than invented numbers.
 
@@ -14,61 +16,6 @@ The point isn't spreadsheet decoration. It's driver-based structure, documented
 assumptions, and scenario/sensitivity analysis applied to a business I actually ran. It
 sits in its own repository rather than a `spreadsheets/` folder inside a larger repo, so a
 reviewer gets a clean landing page they can open directly.
-
-## Anonymisation
-
-Every student in this workbook is a pseudonym (`Student 01`-`Student 37`). No real name,
-parent name, email address, or address appears anywhere in the repository or the workbook.
-I checked this by grepping the built `.xlsx`'s shared-strings table, not just the cells I
-wrote by hand. That table is where leftover text tends to hide in `openpyxl` files. The
-mapping from pseudonym to real identity lives in a local, gitignored file that is never
-committed. Rates and revenue figures are the owner's own, not client data, so those are
-shown as-is.
-
-## Where the data came from
-
-The original plan was to pull this from the SQLite database behind a companion invoicing
-project. That database turned out to hold only synthetic seed/test data: a flat $40 rate
-across 23 fictional students, all invoices timestamped identically. So it was dropped.
-
-The actual source is a Google Sheet the owner used to run the business day-to-day. It
-holds a 9-week attendance grid (lesson delivered or not, per student, per weekday) plus a
-per-student rate/billing table. It was exported once, by hand, into `data/raw/`
-(gitignored) and processed by [`scripts/extract.py`](scripts/extract.py), which builds the
-pseudonym mapping and writes an anonymised long-format CSV.
-[`scripts/build_workbook.py`](scripts/build_workbook.py) turns that CSV into the workbook.
-
-Every derived figure in the workbook is an Excel formula, not a value computed in Python
-and pasted in. [`scripts/recalc.py`](scripts/recalc.py) forces Excel to recalculate the
-whole workbook via COM automation and checks every cell for formula errors before anything
-is treated as done. Every figure below was also checked by hand against the source data,
-not just trusted because the recalc came back clean.
-
-## Assumptions
-
-Every input the model uses lives on one sheet, in its own labelled cell, with a source note
-saying whether it came from the data, a statutory rate, or the owner's own estimate.
-
-![Assumptions sheet](docs/screenshots/assumptions.png)
-
-Two of these deserve flagging plainly rather than burying in the sheet:
-
-- **Income tax provisioning rate (20%) is an estimate for provisioning purposes only.**
-  The business wound up mid financial year. The real liability depends on total income
-  across the whole year, which this model doesn't have. It is not a derived or lodged
-  figure.
-- **No suburb or address field exists anywhere in the source data.** Travel is therefore
-  modelled as a flat weekly time/cost figure (1.5 hrs/day, $98/week vehicle running cost)
-  allocated across students by their share of lessons delivered, rather than as a
-  per-suburb distance calculation. The model **cannot** say which suburbs were unprofitable
-  once travel was counted, because the location data to answer that question doesn't exist.
-  Inventing it wasn't an option.
-
-Terminology note: "super" (e.g. the 12.5% rate in Findings) is Australian
-superannuation terminology inherited from the source assumptions. The business itself
-operates in Belgium, where the equivalent statutory social contribution would be the
-applicable Belgian rate; the 12.5% is the modelled contribution rate, not an assertion
-about Belgian law.
 
 ## Findings
 
@@ -105,6 +52,61 @@ teachable-hours ceiling constrained the business.
 
 ![Capacity utilisation](docs/screenshots/capacity.png)
 
+## Assumptions
+
+Every input the model uses lives on one sheet, in its own labelled cell, with a source note
+saying whether it came from the data, a statutory rate, or the owner's own estimate.
+
+![Assumptions sheet](docs/screenshots/assumptions.png)
+
+Two of these deserve flagging plainly rather than burying in the sheet:
+
+- **Income tax provisioning rate (20%) is an estimate for provisioning purposes only.**
+  The business wound up mid financial year. The real liability depends on total income
+  across the whole year, which this model doesn't have. It is not a derived or lodged
+  figure.
+- **No suburb or address field exists anywhere in the source data.** Travel is therefore
+  modelled as a flat weekly time/cost figure (1.5 hrs/day, $98/week vehicle running cost)
+  allocated across students by their share of lessons delivered, rather than as a
+  per-suburb distance calculation. The model **cannot** say which suburbs were unprofitable
+  once travel was counted, because the location data to answer that question doesn't exist.
+  Inventing it wasn't an option.
+
+Terminology note: "super" (e.g. the 12.5% rate in Findings) is Australian
+superannuation terminology inherited from the source assumptions. The business itself
+operates in Belgium, where the equivalent statutory social contribution would be the
+applicable Belgian rate; the 12.5% is the modelled contribution rate, not an assertion
+about Belgian law.
+
+## Where the data came from
+
+The original plan was to pull this from the SQLite database behind a companion invoicing
+project. That database turned out to hold only synthetic seed/test data: a flat $40 rate
+across 23 fictional students, all invoices timestamped identically. So it was dropped.
+
+The actual source is a Google Sheet the owner used to run the business day-to-day. It
+holds a 9-week attendance grid (lesson delivered or not, per student, per weekday) plus a
+per-student rate/billing table. It was exported once, by hand, into `data/raw/`
+(gitignored) and processed by [`scripts/extract.py`](scripts/extract.py), which builds the
+pseudonym mapping and writes an anonymised long-format CSV.
+[`scripts/build_workbook.py`](scripts/build_workbook.py) turns that CSV into the workbook.
+
+Every derived figure in the workbook is an Excel formula, not a value computed in Python
+and pasted in. [`scripts/recalc.py`](scripts/recalc.py) forces Excel to recalculate the
+whole workbook via COM automation and checks every cell for formula errors before anything
+is treated as done. Every figure above was also checked by hand against the source data,
+not just trusted because the recalc came back clean.
+
+## Anonymisation
+
+Every student in this workbook is a pseudonym (`Student 01`-`Student 37`). No real name,
+parent name, email address, or address appears anywhere in the repository or the workbook.
+I checked this by grepping the built `.xlsx`'s shared-strings table, not just the cells I
+wrote by hand. That table is where leftover text tends to hide in `openpyxl` files. The
+mapping from pseudonym to real identity lives in a local, gitignored file that is never
+committed. Rates and revenue figures are the owner's own, not client data, so those are
+shown as-is.
+
 ## Limitations (stated plainly, not hidden in a footnote)
 
 - **No suburb/location data exists in the source**, at all. Every travel figure is a flat
@@ -134,3 +136,7 @@ data/                                 Gitignored entirely, raw and intermediate 
 `data/` never leaves this machine; nothing under it is tracked by git. Rebuilding from
 scratch requires the raw export (not included) and Python 3.13 with `openpyxl`, `pywin32`,
 `pymupdf`, and `pillow` (see `.python-version`).
+
+## License
+
+[MIT](LICENSE)
