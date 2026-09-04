@@ -24,7 +24,10 @@ def main():
     if not WORKBOOK.exists():
         raise SystemExit(f"Workbook not found: {WORKBOOK}")
 
-    excel = win32.gencache.EnsureDispatch("Excel.Application")
+    # Late binding: this script uses no win32com.client.constants, so it does
+    # not need the generated type library, and Dispatch keeps working when the
+    # gen_py cache is stale or unwritable (EnsureDispatch raises there).
+    excel = win32.Dispatch("Excel.Application")
     excel.Visible = False
     excel.DisplayAlerts = False
     errors = []

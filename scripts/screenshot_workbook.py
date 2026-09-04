@@ -34,7 +34,7 @@ SHEETS = [
     ("Sensitivity", "sensitivity.png", True),
 ]
 
-DPI = 200
+DPI = 300
 
 
 def export_sheet(ws, out_png, landscape):
@@ -77,7 +77,10 @@ def crop_whitespace(png_path, padding=24):
 
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    excel = win32.gencache.EnsureDispatch("Excel.Application")
+    # Late binding: the XL_* constants above are defined locally, so the
+    # generated type library is unnecessary and Dispatch keeps working when
+    # the gen_py cache is stale or unwritable (EnsureDispatch raises there).
+    excel = win32.Dispatch("Excel.Application")
     excel.Visible = False
     excel.DisplayAlerts = False
     try:
